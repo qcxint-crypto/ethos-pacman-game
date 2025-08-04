@@ -1,8 +1,8 @@
 /*jslint browser: true, undef: true, eqeqeq: true, nomen: true, white: true */
 /*global window: false, document: false */
 
-// PACMAN GAME WITH SPRITE MODIFICATION
-// Original code modified to support custom sprites for Pacman and Ghosts
+// PACMAN GAME WITH SPRITE MODIFICATION - FIXED VERSION
+// Versi yang sudah diperbaiki untuk mengatasi masalah ghost ID
 
 var NONE        = 4,
     UP          = 3,
@@ -77,6 +77,8 @@ var ImageLoader = {
             img.onload = this.imageLoaded.bind(this, callback);
             img.onerror = function() {
                 console.error('Failed to load image:', this.src);
+                // Tetap lanjut meskipun ada error loading gambar
+                ImageLoader.imageLoaded(callback);
             };
             img.src = this.imagePaths[key];
             this.images[key] = img;
@@ -699,7 +701,7 @@ function initializeGameWithSprites() {
               "(firefox 3.6+, Chrome 4+, Opera 10+ and Safari 4+)</small>";
         }
     });
-};
+}
 
 Pacman.Map = function (size) {
     
@@ -794,7 +796,7 @@ Pacman.Map = function (size) {
                             0, 
                             Math.PI * 2, false); 
                     ctx.fill();
-                    ctx.closePath();
+                    ctx.closPath();
                 }
 		    }
 	    }
@@ -1068,7 +1070,6 @@ var PACMAN = (function () {
 
         ctx.fillStyle = !soundDisabled() ? "#00FF00" : "#FF0000";
         ctx.font = "bold 16px sans-serif";
-        //ctx.fillText("♪", 10, textBase);
         ctx.fillText("s", 10, textBase);
 
         ctx.fillStyle = "#FFFF00";
@@ -1219,8 +1220,10 @@ var PACMAN = (function () {
             "eatenPill"      : eatenPill 
         }, map);
 
+        // PERBAIKAN UTAMA: Tambahkan ghostNumber parameter saat membuat ghost
         for (i = 0, len = ghostSpecs.length; i < len; i += 1) {
-            ghost = new Pacman.Ghost({"getTick":getTick}, map, ghostSpecs[i]);
+            var ghostNumber = (i % 3) + 1; // Menghasilkan 1, 2, 3, 1 untuk 4 ghost
+            ghost = new Pacman.Ghost({"getTick":getTick}, map, ghostSpecs[i], ghostNumber);
             ghosts.push(ghost);
         }
         
@@ -1363,7 +1366,6 @@ Pacman.WALLS = [
     [{"move": [9.5, 6]}, {"curve": [9.5, 5.5, 10.5, 5.5]},
      {"line": [11.5, 5.5]}],
 
-
     [{"move": [5.5, 5.5]}, {"line": [5.5, 7]}, {"curve": [5.5, 7.5, 6, 7.5]},
      {"line": [7.5, 7.5]}],
     [{"move": [6, 7.5]}, {"curve": [5.5, 7.5, 5.5, 8]}, {"line": [5.5, 9.5]}],
@@ -1439,4 +1441,3 @@ Object.prototype.clone = function () {
     }
     return newObj;
 };
-
