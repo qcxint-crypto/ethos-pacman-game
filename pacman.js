@@ -1,12 +1,8 @@
 /*jslint browser: true, undef: true, eqeqeq: true, nomen: true, white: true */
 /*global window: false, document: false */
 
-/*
- * fix looped audio
- * add fruits + levels
- * fix what happens when a ghost is eaten (should go back to base)
- * do proper ghost mechanics (blinky/wimpy etc)
- */
+// PACMAN GAME WITH SPRITE MODIFICATION
+// Original code modified to support custom sprites for Pacman and Ghosts
 
 var NONE        = 4,
     UP          = 3,
@@ -23,13 +19,98 @@ var NONE        = 4,
 
 Pacman.FPS = 30;
 
-Pacman.Ghost = function (game, map, colour) {
+// Image Loader System for Sprites
+var ImageLoader = {
+    images: {},
+    loaded: 0,
+    totalImages: 0,
+    
+    // Define all image paths
+    imagePaths: {
+        // Pacman sprites
+        'pacman_right_open': 'images/pacman_right_open.png',
+        'pacman_right_closed': 'images/pacman_right_closed.png',
+        'pacman_left_open': 'images/pacman_left_open.png',
+        'pacman_left_closed': 'images/pacman_left_closed.png',
+        'pacman_up_open': 'images/pacman_up_open.png',
+        'pacman_up_closed': 'images/pacman_up_closed.png',
+        'pacman_down_open': 'images/pacman_down_open.png',
+        'pacman_down_closed': 'images/pacman_down_closed.png',
+        
+        // Ghost 1 sprites
+        'ghost1_left': 'images/ghost1_left.png',
+        'ghost1_right': 'images/ghost1_right.png',
+        'ghost1_up': 'images/ghost1_up.png',
+        'ghost1_down': 'images/ghost1_down.png',
+        'ghost1_scared': 'images/ghost1_scared.png',
+        'ghost1_normal': 'images/ghost1_normal.png',
+        
+        // Ghost 2 sprites
+        'ghost2_left': 'images/ghost2_left.png',
+        'ghost2_right': 'images/ghost2_right.png',
+        'ghost2_up': 'images/ghost2_up.png',
+        'ghost2_down': 'images/ghost2_down.png',
+        'ghost2_scared': 'images/ghost2_scared.png',
+        'ghost2_normal': 'images/ghost2_normal.png',
+        
+        // Ghost 3 sprites
+        'ghost3_left': 'images/ghost3_left.png',
+        'ghost3_right': 'images/ghost3_right.png',
+        'ghost3_up': 'images/ghost3_up.png',
+        'ghost3_down': 'images/ghost3_down.png',
+        'ghost3_scared': 'images/ghost3_scared.png',
+        'ghost3_normal': 'images/ghost3_normal.png',
+        
+        // Other sprites
+        'pellet_small': 'images/pellet_small.png',
+        'pellet_large': 'images/pellet_large.png',
+        'cherry': 'images/cherry.png'
+    },
+    
+    // Load all images
+    loadImages: function(callback) {
+        this.totalImages = Object.keys(this.imagePaths).length;
+        this.loaded = 0;
+        
+        for (var key in this.imagePaths) {
+            var img = new Image();
+            img.onload = this.imageLoaded.bind(this, callback);
+            img.onerror = function() {
+                console.error('Failed to load image:', this.src);
+            };
+            img.src = this.imagePaths[key];
+            this.images[key] = img;
+        }
+        
+        // If no images to load, call callback immediately
+        if (this.totalImages === 0) {
+            callback();
+        }
+    },
+    
+    imageLoaded: function(callback) {
+        this.loaded++;
+        console.log('Loaded ' + this.loaded + '/' + this.totalImages + ' images');
+        if (this.loaded === this.totalImages) {
+            console.log('All images loaded successfully!');
+            callback();
+        }
+    },
+    
+    getImage: function(key) {
+        return this.images[key];
+    }
+};
+
+// Modified Ghost with Sprite Support
+Pacman.Ghost = function (game, map, colour, ghostNumber) {
 
     var position  = null,
         direction = null,
         eatable   = null,
         eaten     = null,
-        due       = null;
+        due       = null,
+        ghostId   = ghostNumber || 1; // Default to ghost 1
     
     function getNewCoord(dir, current) { 
         
@@ -43,9 +124,6 @@ Pacman.Ghost = function (game, map, colour) {
         };
     };
 
-    /* Collision detection(walls) is done when a ghost lands on an
-     * exact block, make sure they dont skip over it 
-     */
     function addBounded(x1, x2) { 
         var rem    = x1 % 10, 
             result = rem + x2;
@@ -139,10 +217,10 @@ Pacman.Ghost = function (game, map, colour) {
         return colour;
     };
 
+    // Modified draw function with sprite support
     function draw(ctx) {
-  
-        var s    = map.blockSize, 
-            top  = (position.y/10) * s,
+        var s = map.blockSize, 
+            top = (position.y/10) * s,
             left = (position.x/10) * s;
     
         if (eatable && secondsAgo(eatable) > 8) {
@@ -153,6 +231,47 @@ Pacman.Ghost = function (game, map, colour) {
             eaten = null;
         }
         
+        // Determine sprite based on ghost state and direction
+        var spriteKey = getGhostSpriteKey();
+        var sprite = ImageLoader.getImage(spriteKey);
+        
+        if (sprite && sprite.complete) {
+            // Draw the sprite
+            ctx.drawImage(sprite, 
+                left, top,  // Position
+                s, s        // Size (scaled to block size)
+            );
+        } else {
+            // Fallback to original drawing if sprite not loaded
+            drawFallback(ctx, s, top, left);
+        }
+    }
+    
+    function getGhostSpriteKey() {
+        var prefix = 'ghost' + ghostId;
+        
+        // If ghost is eatable (scared), use scared sprite
+        if (eatable) {
+            return prefix + '_scared';
+        }
+        
+        // If ghost is eaten (eyes only), use normal for now
+        if (eaten) {
+            return prefix + '_normal';
+        }
+        
+        // Normal state - use direction-based sprite
+        switch(direction) {
+            case RIGHT: return prefix + '_right';
+            case LEFT: return prefix + '_left';
+            case UP: return prefix + '_up';
+            case DOWN: return prefix + '_down';
+            default: return prefix + '_normal';
+        }
+    }
+    
+    function drawFallback(ctx, s, top, left) {
+        // Original ghost drawing code as fallback
         var tl = left + s;
         var base = top + s - 3;
         var inc = s / 10;
@@ -178,6 +297,7 @@ Pacman.Ghost = function (game, map, colour) {
         ctx.closePath();
         ctx.fill();
 
+        // Eyes
         ctx.beginPath();
         ctx.fillStyle = "#FFF";
         ctx.arc(left + 6,top + 6, s / 6, 0, 300, false);
@@ -200,11 +320,9 @@ Pacman.Ghost = function (game, map, colour) {
                 s / 15, 0, 300, false);
         ctx.closePath();
         ctx.fill();
-
-    };
+    }
 
     function pane(pos) {
-
         if (pos.y === 100 && pos.x >= 190 && direction === RIGHT) {
             return {"y": 100, "x": -10};
         }
@@ -276,6 +394,7 @@ Pacman.Ghost = function (game, map, colour) {
     };
 };
 
+// Modified User (Pacman) with Sprite Support
 Pacman.User = function (game, map) {
     
     var position  = null,
@@ -284,7 +403,9 @@ Pacman.User = function (game, map) {
         due       = null, 
         lives     = null,
         score     = 5,
-        keyMap    = {};
+        keyMap    = {},
+        animationTime = 0,
+        mouthOpen = true;
     
     keyMap[KEY.ARROW_LEFT]  = LEFT;
     keyMap[KEY.ARROW_UP]    = UP;
@@ -471,7 +592,6 @@ Pacman.User = function (game, map) {
     };
 
     function drawDead(ctx, amount) { 
-
         var size = map.blockSize, 
             half = size / 2;
 
@@ -491,25 +611,58 @@ Pacman.User = function (game, map) {
         ctx.fill();    
     };
 
+    // Modified draw function with sprite support
     function draw(ctx) { 
-
-        var s     = map.blockSize, 
-            angle = calcAngle(direction, position);
-
+        var s = map.blockSize;
+        var x = (position.x/10) * s;
+        var y = (position.y/10) * s;
+        
+        // Update animation (mouth opening/closing)
+        animationTime += 16; // Assuming ~60fps
+        if (animationTime > 200) { // Change every 200ms
+            mouthOpen = !mouthOpen;
+            animationTime = 0;
+        }
+        
+        // Determine sprite based on direction and mouth state
+        var spriteKey = getSpriteKey(direction, mouthOpen);
+        var sprite = ImageLoader.getImage(spriteKey);
+        
+        if (sprite && sprite.complete) {
+            // Draw the sprite centered on the position
+            ctx.drawImage(sprite, 
+                x - s/2, y - s/2,  // Position (centered)
+                s, s               // Size (scaled to block size)
+            );
+        } else {
+            // Fallback to original drawing if sprite not loaded
+            drawFallback(ctx, s, x, y);
+        }
+    }
+    
+    function getSpriteKey(dir, mouthOpen) {
+        var suffix = mouthOpen ? '_open' : '_closed';
+        
+        switch(dir) {
+            case RIGHT: return 'pacman_right' + suffix;
+            case LEFT: return 'pacman_left' + suffix;
+            case UP: return 'pacman_up' + suffix;
+            case DOWN: return 'pacman_down' + suffix;
+            default: return 'pacman_right' + suffix;
+        }
+    }
+    
+    function drawFallback(ctx, s, x, y) {
+        // Original drawing code as fallback
+        var angle = calcAngle(direction, position);
+        
         ctx.fillStyle = "#FFFF00";
-
         ctx.beginPath();        
-
-        ctx.moveTo(((position.x/10) * s) + s / 2,
-                   ((position.y/10) * s) + s / 2);
-        
-        ctx.arc(((position.x/10) * s) + s / 2,
-                ((position.y/10) * s) + s / 2,
-                s / 2, Math.PI * angle.start, 
+        ctx.moveTo(x, y);
+        ctx.arc(x, y, s / 2, Math.PI * angle.start, 
                 Math.PI * angle.end, angle.direction); 
-        
-        ctx.fill();    
-    };
+        ctx.fill();
+    }
     
     initUser();
 
@@ -527,6 +680,25 @@ Pacman.User = function (game, map) {
         "reset"         : reset,
         "resetPosition" : resetPosition
     };
+};
+
+// Initialize game with sprite loading
+function initializeGameWithSprites() {
+    console.log('Starting sprite loading...');
+    
+    ImageLoader.loadImages(function() {
+        console.log('All sprites loaded, initializing game...');
+        
+        var el = document.getElementById("pacman");
+        
+        if (Modernizr.canvas && Modernizr.localstorage && 
+            Modernizr.audio && (Modernizr.audio.ogg || Modernizr.audio.mp3)) {
+            window.setTimeout(function () { PACMAN.init(el, "./"); }, 0);
+        } else { 
+            el.innerHTML = "Sorry, needs a decent browser<br /><small>" + 
+              "(firefox 3.6+, Chrome 4+, Opera 10+ and Safari 4+)</small>";
+        }
+    });
 };
 
 Pacman.Map = function (size) {
@@ -1267,3 +1439,4 @@ Object.prototype.clone = function () {
     }
     return newObj;
 };
+
