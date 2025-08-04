@@ -24,62 +24,24 @@ var NONE        = 4,
 Pacman.FPS = 30;
 
 Pacman.Ghost = function (game, map, colour) {
-    var position = null,
+
+    var position  = null,
         direction = null,
-        eatable = null,
-        eaten = null,
-        due = null;
-
-    function draw(ctx) {
-        var s = map.blockSize,
-            top = (position.y / 10) * s,
-            left = (position.x / 10) * s;
-
-        var ghostImage = new Image();
-        // Tentukan gambar ghost berdasarkan arah dan status
-        if (eatable) {
-            ghostImage.src = 'images/ghost1_scared.png'; // Jika ghost dalam keadaan takut
-        } else if (colour === "#00FFDE") { // Ghost 1 (misal dengan warna tertentu)
-            if (direction === LEFT) {
-                ghostImage.src = 'images/ghost1_left.png';
-            } else if (direction === RIGHT) {
-                ghostImage.src = 'images/ghost1_right.png';
-            } else if (direction === UP) {
-                ghostImage.src = 'images/ghost1_up.png';
-            } else if (direction === DOWN) {
-                ghostImage.src = 'images/ghost1_down.png';
-            }
-        } else if (colour === "#FF0000") { // Ghost 2
-            if (direction === LEFT) {
-                ghostImage.src = 'images/ghost2_left.png';
-            } else if (direction === RIGHT) {
-                ghostImage.src = 'images/ghost2_right.png';
-            } else if (direction === UP) {
-                ghostImage.src = 'images/ghost2_up.png';
-            } else if (direction === DOWN) {
-                ghostImage.src = 'images/ghost2_down.png';
-            }
-        } else { // Ghost 3
-            if (direction === LEFT) {
-                ghostImage.src = 'images/ghost3_left.png';
-            } else if (direction === RIGHT) {
-                ghostImage.src = 'images/ghost3_right.png';
-            } else if (direction === UP) {
-                ghostImage.src = 'images/ghost3_up.png';
-            } else if (direction === DOWN) {
-                ghostImage.src = 'images/ghost3_down.png';
-            }
-        }
-
-        ghostImage.onload = function() {
-            ctx.drawImage(ghostImage, left, top, s, s); // Gambar ghost pada posisi yang sesuai
-        }
-    }
-
-    return {
-        "draw": draw
+        eatable   = null,
+        eaten     = null,
+        due       = null;
+    
+    function getNewCoord(dir, current) { 
+        
+        var speed  = isVunerable() ? 1 : isHidden() ? 4 : 2,
+            xSpeed = (dir === LEFT && -speed || dir === RIGHT && speed || 0),
+            ySpeed = (dir === DOWN && speed || dir === UP && -speed || 0);
+    
+        return {
+            "x": addBounded(current.x, xSpeed),
+            "y": addBounded(current.y, ySpeed)
+        };
     };
-};
 
     /* Collision detection(walls) is done when a ghost lands on an
      * exact block, make sure they dont skip over it 
@@ -315,31 +277,32 @@ Pacman.Ghost = function (game, map, colour) {
 };
 
 Pacman.User = function (game, map) {
-    var position = null,
-        direction = null,
-        eaten = null,
-        due = null,
-        lives = null,
-        score = 5,
-        keyMap = {};
     
-    keyMap[KEY.ARROW_LEFT] = LEFT;
-    keyMap[KEY.ARROW_UP] = UP;
+    var position  = null,
+        direction = null,
+        eaten     = null,
+        due       = null, 
+        lives     = null,
+        score     = 5,
+        keyMap    = {};
+    
+    keyMap[KEY.ARROW_LEFT]  = LEFT;
+    keyMap[KEY.ARROW_UP]    = UP;
     keyMap[KEY.ARROW_RIGHT] = RIGHT;
-    keyMap[KEY.ARROW_DOWN] = DOWN;
+    keyMap[KEY.ARROW_DOWN]  = DOWN;
 
-    function addScore(nScore) {
+    function addScore(nScore) { 
         score += nScore;
-        if (score >= 10000 && score - nScore < 10000) {
+        if (score >= 10000 && score - nScore < 10000) { 
             lives += 1;
         }
     };
 
-    function theScore() {
+    function theScore() { 
         return score;
     };
 
-    function loseLife() {
+    function loseLife() { 
         lives -= 1;
     };
 
@@ -352,32 +315,32 @@ Pacman.User = function (game, map) {
         lives = 3;
         newLevel();
     }
-
+    
     function newLevel() {
         resetPosition();
         eaten = 0;
-    }
-
+    };
+    
     function resetPosition() {
-        position = { "x": 90, "y": 120 };
+        position = {"x": 90, "y": 120};
         direction = LEFT;
         due = LEFT;
-    }
-
+    };
+    
     function reset() {
         initUser();
         resetPosition();
     };        
     
     function keyDown(e) {
-        if (typeof keyMap[e.keyCode] !== "undefined") {
+        if (typeof keyMap[e.keyCode] !== "undefined") { 
             due = keyMap[e.keyCode];
             e.preventDefault();
             e.stopPropagation();
             return false;
         }
         return true;
-    };
+	};
 
     function getNewCoord(dir, current) {   
         return {
@@ -528,40 +491,41 @@ Pacman.User = function (game, map) {
         ctx.fill();    
     };
 
-   function draw(ctx) {
-        var s = map.blockSize,
+    function draw(ctx) { 
+
+        var s     = map.blockSize, 
             angle = calcAngle(direction, position);
 
-        // Gambar Pacman berdasarkan arah dan status (terbuka/tertutup)
-        var pacmanImage = new Image();
-        if (direction === RIGHT) {
-            pacmanImage.src = eatable ? 'images/pacman_right_open.png' : 'images/pacman_right_closed.png';
-        } else if (direction === LEFT) {
-            pacmanImage.src = eatable ? 'images/pacman_left_open.png' : 'images/pacman_left_closed.png';
-        } else if (direction === UP) {
-            pacmanImage.src = eatable ? 'images/pacman_up_open.png' : 'images/pacman_up_closed.png';
-        } else if (direction === DOWN) {
-            pacmanImage.src = eatable ? 'images/pacman_down_open.png' : 'images/pacman_down_closed.png';
-        }
+        ctx.fillStyle = "#FFFF00";
 
-        pacmanImage.onload = function() {
-            ctx.drawImage(pacmanImage, (position.x / 10) * s, (position.y / 10) * s, s, s); // Di mana s adalah ukuran grid
-        }
-    }
+        ctx.beginPath();        
 
+        ctx.moveTo(((position.x/10) * s) + s / 2,
+                   ((position.y/10) * s) + s / 2);
+        
+        ctx.arc(((position.x/10) * s) + s / 2,
+                ((position.y/10) * s) + s / 2,
+                s / 2, Math.PI * angle.start, 
+                Math.PI * angle.end, angle.direction); 
+        
+        ctx.fill();    
+    };
+    
     initUser();
 
     return {
-        "draw": draw,
-        "keyDown": keyDown,
-        "loseLife": loseLife,
-        "getLives": getLives,
-        "score": score,
-        "addScore": addScore,
-        "theScore": theScore,
-        "newLevel": newLevel,
-        "reset": reset,
-        "resetPosition": resetPosition
+        "draw"          : draw,
+        "drawDead"      : drawDead,
+        "loseLife"      : loseLife,
+        "getLives"      : getLives,
+        "score"         : score,
+        "addScore"      : addScore,
+        "theScore"      : theScore,
+        "keyDown"       : keyDown,
+        "move"          : move,
+        "newLevel"      : newLevel,
+        "reset"         : reset,
+        "resetPosition" : resetPosition
     };
 };
 
@@ -947,15 +911,22 @@ var PACMAN = (function () {
     }
 
     function mainDraw() { 
-	var u, i, len, ghostPos, userPos;    
-	    
-	ghostPos = [];    
-        for (i = 0, len = ghosts.length; i < len; i++) {
+
+        var diff, u, i, len, nScore;
+        
+        ghostPos = [];
+
+        for (i = 0, len = ghosts.length; i < len; i += 1) {
             ghostPos.push(ghosts[i].move(ctx));
         }
-        u = user.move(ctx)
+        u = user.move(ctx);
         
-        for (i = 0, len = ghosts.length; i < len; i ++) {
+        for (i = 0, len = ghosts.length; i < len; i += 1) {
+            redrawBlock(ghostPos[i].old);
+        }
+        redrawBlock(u.old);
+        
+        for (i = 0, len = ghosts.length; i < len; i += 1) {
             ghosts[i].draw(ctx);
         }                     
         user.draw(ctx);
@@ -1296,4 +1267,3 @@ Object.prototype.clone = function () {
     }
     return newObj;
 };
-
