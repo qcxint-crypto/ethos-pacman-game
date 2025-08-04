@@ -796,7 +796,7 @@ Pacman.Map = function (size) {
                             0, 
                             Math.PI * 2, false); 
                     ctx.fill();
-                    ctx.closPath();
+                    ctx.closePath();
                 }
 		    }
 	    }
@@ -1441,3 +1441,4 @@ Object.prototype.clone = function () {
     }
     return newObj;
 };
+
