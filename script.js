@@ -74,9 +74,9 @@ let pacman = {
 
 // Ghosts
 let ghosts = [
-  { id: 1, x: 13 * TILE_SIZE, y: 11 * TILE_SIZE, dx: 0, dy: -GHOST_SPEED, direction: 'up', scared: false, eaten: false },
-  { id: 2, x: 12 * TILE_SIZE, y: 14 * TILE_SIZE, dx: -GHOST_SPEED, dy: 0, direction: 'left', scared: false, eaten: false },
-  { id: 3, x: 14 * TILE_SIZE, y: 14 * TILE_SIZE, dx: GHOST_SPEED, dy: 0, direction: 'right', scared: false, eaten: false }
+  { id: 1, x: 13 * TILE_SIZE, y: 11 * TILE_SIZE, dx: 0, dy: -GHOST_SPEED, direction: 'up', scared: false, eaten: false, released: false, releaseTime: 0 },
+  { id: 2, x: 12 * TILE_SIZE, y: 14 * TILE_SIZE, dx: -GHOST_SPEED, dy: 0, direction: 'left', scared: false, eaten: false, released: false, releaseTime: 0 },
+  { id: 3, x: 14 * TILE_SIZE, y: 14 * TILE_SIZE, dx: GHOST_SPEED, dy: 0, direction: 'right', scared: false, eaten: false, released: false, releaseTime: 0 }
 ];
 
 // Load images
@@ -85,9 +85,9 @@ const imageFiles = [
   'pacman_left_open', 'pacman_left_closed',
   'pacman_up_open', 'pacman_up_closed',
   'pacman_down_open', 'pacman_down_closed',
-  'ghost1_left', 'ghost1_right', 'ghost1_up', 'ghost1_down', 'ghost1_scared',
-  'ghost2_left', 'ghost2_right', 'ghost2_up', 'ghost2_down', 'ghost2_scared',
-  'ghost3_left', 'ghost3_right', 'ghost3_up', 'ghost3_down', 'ghost3_scared',
+  'ghost1_left', 'ghost1_right', 'ghost1_up', 'ghost1_down', 'ghost1_scared', 'ghost1_normal',
+  'ghost2_left', 'ghost2_right', 'ghost2_up', 'ghost2_down', 'ghost2_scared', 'ghost2_normal',
+  'ghost3_left', 'ghost3_right', 'ghost3_up', 'ghost3_down', 'ghost3_scared', 'ghost3_normal',
   'pellet_small', 'pellet_large', 'cherry'
 ];
 
@@ -99,6 +99,7 @@ function loadImages() {
     images[file].onload = () => {
       loaded++;
       if (loaded === imageFiles.length) {
+        resetLevel();
         requestAnimationFrame(gameLoop);
       }
     };
@@ -209,6 +210,19 @@ function update() {
       ghost.dx = 0;
       ghost.dy = -GHOST_SPEED;
       ghost.direction = 'up';
+      ghost.released = false;
+      ghost.releaseTime = Date.now() + 5000; // Delay re-release after eaten
+    }
+
+    // Check release
+    if (!ghost.released) {
+      if (Date.now() > ghost.releaseTime) {
+        ghost.released = true;
+      } else {
+        ghost.dx = 0;
+        ghost.dy = 0;
+        return; // Skip movement
+      }
     }
 
     // Determine possible directions
@@ -332,7 +346,8 @@ function draw() {
 
   // Draw ghosts
   ghosts.forEach(ghost => {
-    let ghostImg = images[`ghost${ghost.id}_${ghost.scared ? 'scared' : ghost.direction}`];
+    const mode = ghost.scared ? 'scared' : (ghost.dx === 0 && ghost.dy === 0 ? 'normal' : ghost.direction);
+    let ghostImg = images[`ghost${ghost.id}_${mode}`];
     ctx.drawImage(ghostImg, ghost.x, ghost.y, TILE_SIZE, TILE_SIZE);
   });
 
@@ -357,6 +372,7 @@ function gameLoop() {
 
 // Reset level
 function resetLevel() {
+  const delays = [0, 3000, 6000];
   pelletsEaten = 0;
   currentMaze = mazeTemplate.map(row => row.slice());
   pacman.x = 13.5 * TILE_SIZE;
@@ -369,7 +385,12 @@ function resetLevel() {
   ghosts[0].x = 13 * TILE_SIZE; ghosts[0].y = 11 * TILE_SIZE; ghosts[0].dx = 0; ghosts[0].dy = -GHOST_SPEED; ghosts[0].direction = 'up';
   ghosts[1].x = 12 * TILE_SIZE; ghosts[1].y = 14 * TILE_SIZE; ghosts[1].dx = -GHOST_SPEED; ghosts[1].dy = 0; ghosts[1].direction = 'left';
   ghosts[2].x = 14 * TILE_SIZE; ghosts[2].y = 14 * TILE_SIZE; ghosts[2].dx = GHOST_SPEED; ghosts[2].dy = 0; ghosts[2].direction = 'right';
-  ghosts.forEach(g => { g.scared = false; g.eaten = false; });
+  ghosts.forEach((g, i) => { 
+    g.scared = false; 
+    g.eaten = false; 
+    g.released = false;
+    g.releaseTime = Date.now() + delays[i];
+  });
   powerMode = false;
   cherryActive = false;
   cherryTimer = Date.now() + CHERRY_APPEAR_TIME;
