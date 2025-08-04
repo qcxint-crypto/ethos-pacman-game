@@ -1,7 +1,7 @@
 // Game constants
 const TILE_SIZE = 16;
 const MAP_WIDTH = 28;
-const MAP_HEIGHT = 30; // Fixed: Matches mazeTemplate row count to prevent undefined errors
+const MAP_HEIGHT = 30;
 const CANVAS_WIDTH = MAP_WIDTH * TILE_SIZE;
 const CANVAS_HEIGHT = MAP_HEIGHT * TILE_SIZE + 50; // Extra space for UI
 const PACMAN_SPEED = 2;
@@ -10,38 +10,38 @@ const POWER_TIME = 5000; // ms for power mode
 const CHERRY_APPEAR_TIME = 10000; // ms until cherry appears
 const CHERRY_DURATION = 10000; // ms cherry stays visible
 
-// Maze layout (adjusted slightly to approximate Google logo shape with paths forming "G O O G L E"; walls=1, small pellet=2, power pellet=3, empty=0, ghost gate=5)
+// Maze layout (shaped as "EthOS" in middle rows; 1 = wall, 2 = small pellet, 3 = power pellet, 0 = empty path)
 const mazeTemplate = [
-  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-  [1,2,2,2,2,2,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,2,2,2,2,2,1],
-  [1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1],
-  [1,3,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,3,1],
-  [1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1],
-  [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
-  [1,2,1,1,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1,1,2,1],
-  [1,2,1,1,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1,1,2,1],
-  [1,2,2,2,2,2,2,1,1,2,2,2,2,1,1,2,2,2,2,1,1,2,2,2,2,2,2,1],
-  [1,1,1,1,1,1,2,1,1,2,1,1,1,1,1,1,1,1,2,1,1,2,1,1,1,1,1,1],
-  [1,0,0,0,1,1,2,1,1,2,1,1,1,1,1,1,1,1,2,1,1,2,1,1,0,0,0,1],
-  [1,0,0,0,1,1,2,1,1,2,1,1,1,1,1,1,1,1,2,1,1,2,1,1,0,0,0,1],
-  [1,0,0,0,1,1,2,1,1,2,1,1,1,1,1,1,1,1,2,1,1,2,1,1,0,0,0,1],
-  [1,1,1,1,1,1,2,1,1,2,1,1,1,1,1,1,1,1,2,1,1,2,1,1,1,1,1,1],
-  [1,5,5,5,5,5,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,5,5,5,5,5,1],
-  [1,1,1,1,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1,1,1,1],
-  [1,0,0,0,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,0,0,0,1],
-  [1,0,0,0,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,0,0,0,1],
-  [1,0,0,0,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,0,0,0,1],
-  [1,1,1,1,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1,1,1,1],
-  [1,2,2,2,2,2,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,2,2,2,2,2,1],
-  [1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1],
-  [1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1],
-  [1,3,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,3,1],
-  [1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1],
-  [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
-  [1,2,1,1,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1,1,2,1],
-  [1,2,1,1,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1,1,2,1],
-  [1,2,2,2,2,2,2,1,1,2,2,2,2,1,1,2,2,2,2,1,1,2,2,2,2,2,2,1],
-  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+[0,0,1,1,1,1,2,1,1,1,1,2,1,2,2,1,2,1,1,1,1,2,1,1,1,1,2,0,0],
+[0,0,1,2,2,1,2,2,1,2,2,1,2,2,1,2,1,2,2,1,2,1,2,2,2,2,2,0,0],
+[0,0,1,1,1,1,2,2,1,2,2,1,1,1,1,2,1,2,2,1,2,1,1,1,1,2,2,0,0],
+[0,0,1,2,2,1,2,2,1,2,2,1,2,2,1,2,1,2,2,1,2,2,2,2,1,2,2,0,0],
+[0,0,1,2,2,1,2,2,1,2,2,1,2,2,1,2,1,1,1,1,2,1,1,1,1,2,2,0,0],
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
 ];
 
 // Variables
@@ -57,11 +57,12 @@ let cherryActive = false;
 let cherryX = 0;
 let cherryY = 0;
 let cherryTimer = Date.now() + CHERRY_APPEAR_TIME;
+let images = {};
 
-// Pacman
+ // Pacman
 let pacman = {
-  x: 13.5 * TILE_SIZE, // Starting position
-  y: 23 * TILE_SIZE,
+  x: 3 * TILE_SIZE, // Starting in the 'E'
+  y: 13 * TILE_SIZE, // Middle of the word
   dx: 0,
   dy: 0,
   intendedDx: 0,
@@ -71,15 +72,39 @@ let pacman = {
   frame: 0
 };
 
-// Ghosts colors
-const ghostColors = ['red', 'blue', 'pink'];
-
 // Ghosts
 let ghosts = [
-  { id: 1, x: 13 * TILE_SIZE, y: 11 * TILE_SIZE, dx: 0, dy: -GHOST_SPEED, direction: 'up', scared: false, eaten: false, released: false, releaseTime: 0 },
-  { id: 2, x: 12 * TILE_SIZE, y: 14 * TILE_SIZE, dx: -GHOST_SPEED, dy: 0, direction: 'left', scared: false, eaten: false, released: false, releaseTime: 0 },
-  { id: 3, x: 14 * TILE_SIZE, y: 14 * TILE_SIZE, dx: GHOST_SPEED, dy: 0, direction: 'right', scared: false, eaten: false, released: false, releaseTime: 0 }
+  { id: 1, x: 13 * TILE_SIZE, y: 13 * TILE_SIZE, dx: 0, dy: -GHOST_SPEED, direction: 'up', scared: false, eaten: false, released: false, releaseTime: 0 },
+  { id: 2, x: 12 * TILE_SIZE, y: 13 * TILE_SIZE, dx: -GHOST_SPEED, dy: 0, direction: 'left', scared: false, eaten: false, released: false, releaseTime: 0 },
+  { id: 3, x: 14 * TILE_SIZE, y: 13 * TILE_SIZE, dx: GHOST_SPEED, dy: 0, direction: 'right', scared: false, eaten: false, released: false, releaseTime: 0 }
 ];
+
+// Load images
+const imageFiles = [
+  'pacman_right_open', 'pacman_right_closed',
+  'pacman_left_open', 'pacman_left_closed',
+  'pacman_up_open', 'pacman_up_closed',
+  'pacman_down_open', 'pacman_down_closed',
+  'ghost1_left', 'ghost1_right', 'ghost1_up', 'ghost1_down', 'ghost1_scared', 'ghost1_normal',
+  'ghost2_left', 'ghost2_right', 'ghost2_up', 'ghost2_down', 'ghost2_scared', 'ghost2_normal',
+  'ghost3_left', 'ghost3_right', 'ghost3_up', 'ghost3_down', 'ghost3_scared', 'ghost3_normal',
+  'pellet_small', 'pellet_large', 'cherry'
+];
+
+function loadImages() {
+  let loaded = 0;
+  imageFiles.forEach(file => {
+    images[file] = new Image();
+    images[file].src = `images/${file}.png`;
+    images[file].onload = () => {
+      loaded++;
+      if (loaded === imageFiles.length) {
+        resetLevel();
+        requestAnimationFrame(gameLoop);
+      }
+    };
+  });
+}
 
 // Count total pellets
 for (let y = 0; y < MAP_HEIGHT; y++) {
@@ -94,9 +119,8 @@ function init() {
   ctx = canvas.getContext('2d');
   canvas.width = CANVAS_WIDTH;
   canvas.height = CANVAS_HEIGHT;
+  loadImages();
   document.addEventListener('keydown', handleKeyDown);
-  resetLevel();
-  requestAnimationFrame(gameLoop);
 }
 
 // Key handling
