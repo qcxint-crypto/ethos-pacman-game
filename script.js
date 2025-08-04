@@ -10,7 +10,7 @@ const POWER_TIME = 5000; // ms for power mode
 const CHERRY_APPEAR_TIME = 10000; // ms until cherry appears
 const CHERRY_DURATION = 10000; // ms cherry stays visible
 
-// Maze layout (inspired by classic Pacman, shaped with paths and walls; 1 = wall, 2 = small pellet, 3 = power pellet, 0 = empty path, 5 = ghost house gate)
+// Maze layout (inspired by classic Pacman; adjust to make it more Google logo-like if needed)
 const mazeTemplate = [
   [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
   [1,2,2,2,2,2,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,2,2,2,2,2,1],
@@ -57,7 +57,6 @@ let cherryActive = false;
 let cherryX = 0;
 let cherryY = 0;
 let cherryTimer = Date.now() + CHERRY_APPEAR_TIME;
-let images = {};
 
 // Pacman
 let pacman = {
@@ -72,39 +71,15 @@ let pacman = {
   frame: 0
 };
 
+// Ghosts colors
+const ghostColors = ['red', 'blue', 'pink'];
+
 // Ghosts
 let ghosts = [
   { id: 1, x: 13 * TILE_SIZE, y: 11 * TILE_SIZE, dx: 0, dy: -GHOST_SPEED, direction: 'up', scared: false, eaten: false, released: false, releaseTime: 0 },
   { id: 2, x: 12 * TILE_SIZE, y: 14 * TILE_SIZE, dx: -GHOST_SPEED, dy: 0, direction: 'left', scared: false, eaten: false, released: false, releaseTime: 0 },
   { id: 3, x: 14 * TILE_SIZE, y: 14 * TILE_SIZE, dx: GHOST_SPEED, dy: 0, direction: 'right', scared: false, eaten: false, released: false, releaseTime: 0 }
 ];
-
-// Load images
-const imageFiles = [
-  'pacman_right_open', 'pacman_right_closed',
-  'pacman_left_open', 'pacman_left_closed',
-  'pacman_up_open', 'pacman_up_closed',
-  'pacman_down_open', 'pacman_down_closed',
-  'ghost1_left', 'ghost1_right', 'ghost1_up', 'ghost1_down', 'ghost1_scared', 'ghost1_normal',
-  'ghost2_left', 'ghost2_right', 'ghost2_up', 'ghost2_down', 'ghost2_scared', 'ghost2_normal',
-  'ghost3_left', 'ghost3_right', 'ghost3_up', 'ghost3_down', 'ghost3_scared', 'ghost3_normal',
-  'pellet_small', 'pellet_large', 'cherry'
-];
-
-function loadImages() {
-  let loaded = 0;
-  imageFiles.forEach(file => {
-    images[file] = new Image();
-    images[file].src = `images/${file}.png`;
-    images[file].onload = () => {
-      loaded++;
-      if (loaded === imageFiles.length) {
-        resetLevel();
-        requestAnimationFrame(gameLoop);
-      }
-    };
-  });
-}
 
 // Count total pellets
 for (let y = 0; y < MAP_HEIGHT; y++) {
@@ -119,8 +94,9 @@ function init() {
   ctx = canvas.getContext('2d');
   canvas.width = CANVAS_WIDTH;
   canvas.height = CANVAS_HEIGHT;
-  loadImages();
   document.addEventListener('keydown', handleKeyDown);
+  resetLevel();
+  requestAnimationFrame(gameLoop);
 }
 
 // Key handling
@@ -133,7 +109,7 @@ function handleKeyDown(e) {
   }
 }
 
-// Check if move is possible
+// Can move function
 function canMove(x, y, dx, dy) {
   const newX = x + dx;
   const newY = y + dy;
@@ -165,7 +141,7 @@ function update() {
   }
 
   // Move Pacman if possible
-  if (canMove(pacman.x, pacman.y, pacman.dx, pacman.dy)) {
+  if (canMove(pacman.x, pacman.y, pacman.dx, pacman.dy) ) {
     pacman.x += pacman.dx;
     pacman.y += pacman.dy;
   } else {
@@ -199,10 +175,9 @@ function update() {
     ghosts.forEach(g => g.scared = false);
   }
 
-  // Update ghosts (simple random movement with basic pursuit for one ghost)
+  // Update ghosts
   ghosts.forEach((ghost, index) => {
     if (ghost.eaten) {
-      // Reset to ghost house
       ghost.x = 13 * TILE_SIZE;
       ghost.y = 14 * TILE_SIZE;
       ghost.scared = false;
@@ -211,7 +186,7 @@ function update() {
       ghost.dy = -GHOST_SPEED;
       ghost.direction = 'up';
       ghost.released = false;
-      ghost.releaseTime = Date.now() + 5000; // Delay re-release after eaten
+      ghost.releaseTime = Date.now() + 5000;
     }
 
     // Check release
@@ -221,11 +196,11 @@ function update() {
       } else {
         ghost.dx = 0;
         ghost.dy = 0;
-        return; // Skip movement
+        return;
       }
     }
 
-    // Determine possible directions
+    // Possible directions
     const possibleDirs = [];
     if (canMove(ghost.x, ghost.y, GHOST_SPEED, 0)) possibleDirs.push('right');
     if (canMove(ghost.x, ghost.y, -GHOST_SPEED, 0)) possibleDirs.push('left');
@@ -236,10 +211,9 @@ function update() {
     const reverse = getReverse(ghost.direction);
     if (possibleDirs.length > 1) possibleDirs = possibleDirs.filter(d => d !== reverse);
 
-    // Basic pursuit for first ghost, random for others
+    // Choose direction
     let newDir;
     if (index === 0 && !ghost.scared) {
-      // Pursuit: choose direction towards Pacman
       const dx = pacman.x - ghost.x;
       const dy = pacman.y - ghost.y;
       if (Math.abs(dx) > Math.abs(dy)) {
@@ -252,7 +226,7 @@ function update() {
       newDir = possibleDirs[Math.floor(Math.random() * possibleDirs.length)];
     }
 
-    // Set new direction
+    // Set direction
     switch (newDir) {
       case 'left': ghost.dx = -GHOST_SPEED; ghost.dy = 0; ghost.direction = 'left'; break;
       case 'right': ghost.dx = GHOST_SPEED; ghost.dy = 0; ghost.direction = 'right'; break;
@@ -318,6 +292,100 @@ function update() {
   if (pacman.frame % 5 === 0) pacman.mouthOpen = !pacman.mouthOpen;
 }
 
+// Draw Pacman
+function drawPacman(x, y, direction, mouthOpen) {
+  ctx.fillStyle = 'yellow';
+  ctx.beginPath();
+  let startAngle, endAngle;
+  switch (direction) {
+    case 'right': startAngle = (mouthOpen ? 0.2 : 0) * Math.PI; endAngle = (mouthOpen ? 1.8 : 2) * Math.PI; break;
+    case 'left': startAngle = (mouthOpen ? 1.2 : 1) * Math.PI; endAngle = (mouthOpen ? 0.8 : 0) * Math.PI; break;
+    case 'up': startAngle = (mouthOpen ? 1.7 : 1.5) * Math.PI; endAngle = (mouthOpen ? 1.3 : 0.5) * Math.PI; break;
+    case 'down': startAngle = (mouthOpen ? 0.7 : 0.5) * Math.PI; endAngle = (mouthOpen ? 0.3 : -0.5) * Math.PI; break;
+  }
+  ctx.arc(x + TILE_SIZE / 2, y + TILE_SIZE / 2, TILE_SIZE / 2, startAngle, endAngle);
+  ctx.lineTo(x + TILE_SIZE / 2, y + TILE_SIZE / 2);
+  ctx.fill();
+}
+
+// Draw Ghost
+function drawGhost(x, y, direction, scared, stationary, color) {
+  if (scared) color = 'blue';
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(x + TILE_SIZE / 2, y + TILE_SIZE / 2, TILE_SIZE / 2, Math.PI, 0, false);
+  ctx.lineTo(x + TILE_SIZE, y + TILE_SIZE);
+  ctx.lineTo(x + (3 * TILE_SIZE / 4), y + TILE_SIZE - TILE_SIZE / 4);
+  ctx.lineTo(x + TILE_SIZE / 2, y + TILE_SIZE);
+  ctx.lineTo(x + TILE_SIZE / 4, y + TILE_SIZE - TILE_SIZE / 4);
+  ctx.lineTo(x, y + TILE_SIZE);
+  ctx.lineTo(x, y + TILE_SIZE / 2);
+  ctx.closePath();
+  ctx.fill();
+
+  // Eyes
+  ctx.fillStyle = 'white';
+  ctx.beginPath();
+  let eyeX1 = x + TILE_SIZE / 4;
+  let eyeX2 = x + 3 * TILE_SIZE / 4;
+  let eyeY = y + TILE_SIZE / 2;
+  let pupilOffsetX = 0, pupilOffsetY = 0;
+  if (!stationary && !scared) {
+    switch (direction) {
+      case 'right': pupilOffsetX = TILE_SIZE / 8; break;
+      case 'left': pupilOffsetX = -TILE_SIZE / 8; break;
+      case 'up': pupilOffsetY = -TILE_SIZE / 8; break;
+      case 'down': pupilOffsetY = TILE_SIZE / 8; break;
+    }
+  } // For stationary, eyes forward (no offset)
+
+  ctx.arc(eyeX1, eyeY, TILE_SIZE / 8, 0, Math.PI * 2);
+  ctx.arc(eyeX2, eyeY, TILE_SIZE / 8, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = 'black';
+  ctx.beginPath();
+  ctx.arc(eyeX1 + pupilOffsetX, eyeY + pupilOffsetY, TILE_SIZE / 16, 0, Math.PI * 2);
+  ctx.arc(eyeX2 + pupilOffsetX, eyeY + pupilOffsetY, TILE_SIZE / 16, 0, Math.PI * 2);
+  ctx.fill();
+
+  if (scared) {
+    // Wavy mouth
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = TILE_SIZE / 8;
+    ctx.beginPath();
+    ctx.moveTo(x + TILE_SIZE / 4, y + 3 * TILE_SIZE / 4);
+    ctx.quadraticCurveTo(x + TILE_SIZE / 2, y + TILE_SIZE / 4 + TILE_SIZE / 2, x + 3 * TILE_SIZE / 4, y + 3 * TILE_SIZE / 4);
+    ctx.stroke();
+  }
+}
+
+// Draw Pellet
+function drawPellet(x, y, large) {
+  ctx.fillStyle = 'white';
+  ctx.beginPath();
+  ctx.arc(x + TILE_SIZE / 2, y + TILE_SIZE / 2, large ? TILE_SIZE / 4 : TILE_SIZE / 8, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+// Draw Cherry
+function drawCherry(x, y) {
+  ctx.fillStyle = 'red';
+  ctx.beginPath();
+  ctx.arc(x + TILE_SIZE / 3, y + 2 * TILE_SIZE / 3, TILE_SIZE / 4, 0, Math.PI * 2);
+  ctx.arc(x + 2 * TILE_SIZE / 3, y + TILE_SIZE / 3, TILE_SIZE / 4, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = 'green';
+  ctx.lineWidth = TILE_SIZE / 8;
+  ctx.beginPath();
+  ctx.moveTo(x + TILE_SIZE / 2, y + TILE_SIZE / 4);
+  ctx.lineTo(x + TILE_SIZE / 3, y + TILE_SIZE / 2);
+  ctx.moveTo(x + TILE_SIZE / 2, y + TILE_SIZE / 4);
+  ctx.lineTo(x + 2 * TILE_SIZE / 3, y + TILE_SIZE / 2);
+  ctx.stroke();
+}
+
 // Draw game
 function draw() {
   ctx.fillStyle = 'black';
@@ -330,9 +398,9 @@ function draw() {
         ctx.fillStyle = 'blue';
         ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
       } else if (currentMaze[y][x] === 2) {
-        ctx.drawImage(images['pellet_small'], x * TILE_SIZE + TILE_SIZE / 4, y * TILE_SIZE + TILE_SIZE / 4, TILE_SIZE / 2, TILE_SIZE / 2);
+        drawPellet(x * TILE_SIZE, y * TILE_SIZE, false);
       } else if (currentMaze[y][x] === 3) {
-        ctx.drawImage(images['pellet_large'], x * TILE_SIZE + TILE_SIZE / 4, y * TILE_SIZE + TILE_SIZE / 4, TILE_SIZE / 2, TILE_SIZE / 2);
+        drawPellet(x * TILE_SIZE, y * TILE_SIZE, true);
       } else if (currentMaze[y][x] === 5) {
         ctx.fillStyle = 'pink';
         ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE + TILE_SIZE / 2, TILE_SIZE, 2);
@@ -341,19 +409,17 @@ function draw() {
   }
 
   // Draw Pacman
-  const pacImg = images[`pacman_${pacman.direction}_${pacman.mouthOpen ? 'open' : 'closed'}`];
-  ctx.drawImage(pacImg, pacman.x, pacman.y, TILE_SIZE, TILE_SIZE);
+  drawPacman(pacman.x, pacman.y, pacman.direction, pacman.mouthOpen);
 
   // Draw ghosts
   ghosts.forEach(ghost => {
-    const mode = ghost.scared ? 'scared' : (ghost.dx === 0 && ghost.dy === 0 ? 'normal' : ghost.direction);
-    let ghostImg = images[`ghost${ghost.id}_${mode}`];
-    ctx.drawImage(ghostImg, ghost.x, ghost.y, TILE_SIZE, TILE_SIZE);
+    const stationary = ghost.dx === 0 && ghost.dy === 0;
+    drawGhost(ghost.x, ghost.y, ghost.direction, ghost.scared, stationary, ghostColors[ghost.id - 1]);
   });
 
   // Draw cherry
   if (cherryActive) {
-    ctx.drawImage(images['cherry'], cherryX, cherryY, TILE_SIZE, TILE_SIZE);
+    drawCherry(cherryX, cherryY);
   }
 
   // Draw UI
