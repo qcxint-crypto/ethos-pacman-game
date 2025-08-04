@@ -1127,7 +1127,8 @@ var PACMAN = (function () {
     };
 
     function mainLoop() {
-
+        // Hapus seluruh canvas sebelum gambar frame baru
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
         var diff;
 
         if (state !== PAUSE) { 
@@ -1441,4 +1442,5 @@ Object.prototype.clone = function () {
     }
     return newObj;
 };
+
 
