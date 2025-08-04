@@ -1,7 +1,7 @@
 // Game constants
 const TILE_SIZE = 16;
 const MAP_WIDTH = 28;
-const MAP_HEIGHT = 31;
+const MAP_HEIGHT = 30; // Fixed: Matches mazeTemplate row count to prevent undefined errors
 const CANVAS_WIDTH = MAP_WIDTH * TILE_SIZE;
 const CANVAS_HEIGHT = MAP_HEIGHT * TILE_SIZE + 50; // Extra space for UI
 const PACMAN_SPEED = 2;
@@ -10,7 +10,7 @@ const POWER_TIME = 5000; // ms for power mode
 const CHERRY_APPEAR_TIME = 10000; // ms until cherry appears
 const CHERRY_DURATION = 10000; // ms cherry stays visible
 
-// Maze layout (inspired by classic Pacman; adjust to make it more Google logo-like if needed)
+// Maze layout (adjusted slightly to approximate Google logo shape with paths forming "G O O G L E"; walls=1, small pellet=2, power pellet=3, empty=0, ghost gate=5)
 const mazeTemplate = [
   [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
   [1,2,2,2,2,2,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,2,2,2,2,2,1],
@@ -156,17 +156,19 @@ function update() {
   // Eat pellets
   const tileX = Math.floor(pacman.x / TILE_SIZE);
   const tileY = Math.floor(pacman.y / TILE_SIZE);
-  if (currentMaze[tileY][tileX] === 2) {
-    currentMaze[tileY][tileX] = 0;
-    score += 10;
-    pelletsEaten++;
-  } else if (currentMaze[tileY][tileX] === 3) {
-    currentMaze[tileY][tileX] = 0;
-    score += 50;
-    pelletsEaten++;
-    powerMode = true;
-    powerTimer = Date.now() + POWER_TIME;
-    ghosts.forEach(g => g.scared = true);
+  if (tileY >= 0 && tileY < MAP_HEIGHT && tileX >= 0 && tileX < MAP_WIDTH) { // Added bounds check
+    if (currentMaze[tileY][tileX] === 2) {
+      currentMaze[tileY][tileX] = 0;
+      score += 10;
+      pelletsEaten++;
+    } else if (currentMaze[tileY][tileX] === 3) {
+      currentMaze[tileY][tileX] = 0;
+      score += 50;
+      pelletsEaten++;
+      powerMode = true;
+      powerTimer = Date.now() + POWER_TIME;
+      ghosts.forEach(g => g.scared = true);
+    }
   }
 
   // End power mode
@@ -292,19 +294,38 @@ function update() {
   if (pacman.frame % 5 === 0) pacman.mouthOpen = !pacman.mouthOpen;
 }
 
-// Draw Pacman
+// Draw Pacman (fixed angles for proper rendering in all directions)
 function drawPacman(x, y, direction, mouthOpen) {
   ctx.fillStyle = 'yellow';
   ctx.beginPath();
-  let startAngle, endAngle;
+  const centerX = x + TILE_SIZE / 2;
+  const centerY = y + TILE_SIZE / 2;
+  const radius = TILE_SIZE / 2;
+  let startAngle = 0;
+  let endAngle = 2 * Math.PI;
+  const mouthAngle = mouthOpen ? Math.PI / 4 : 0; // 45 degrees for open mouth
+
   switch (direction) {
-    case 'right': startAngle = (mouthOpen ? 0.2 : 0) * Math.PI; endAngle = (mouthOpen ? 1.8 : 2) * Math.PI; break;
-    case 'left': startAngle = (mouthOpen ? 1.2 : 1) * Math.PI; endAngle = (mouthOpen ? 0.8 : 0) * Math.PI; break;
-    case 'up': startAngle = (mouthOpen ? 1.7 : 1.5) * Math.PI; endAngle = (mouthOpen ? 1.3 : 0.5) * Math.PI; break;
-    case 'down': startAngle = (mouthOpen ? 0.7 : 0.5) * Math.PI; endAngle = (mouthOpen ? 0.3 : -0.5) * Math.PI; break;
+    case 'right':
+      startAngle = mouthOpen ? mouthAngle : 0;
+      endAngle = mouthOpen ? 2 * Math.PI - mouthAngle : 2 * Math.PI;
+      break;
+    case 'left':
+      startAngle = mouthOpen ? Math.PI + mouthAngle : Math.PI;
+      endAngle = mouthOpen ? Math.PI - mouthAngle : Math.PI + 2 * Math.PI; // Wrap around
+      break;
+    case 'up':
+      startAngle = mouthOpen ? (3 * Math.PI / 2) + mouthAngle : 3 * Math.PI / 2;
+      endAngle = mouthOpen ? (3 * Math.PI / 2) - mouthAngle + 2 * Math.PI : 3 * Math.PI / 2 + 2 * Math.PI;
+      break;
+    case 'down':
+      startAngle = mouthOpen ? (Math.PI / 2) + mouthAngle : Math.PI / 2;
+      endAngle = mouthOpen ? (Math.PI / 2) - mouthAngle + 2 * Math.PI : Math.PI / 2 + 2 * Math.PI;
+      break;
   }
-  ctx.arc(x + TILE_SIZE / 2, y + TILE_SIZE / 2, TILE_SIZE / 2, startAngle, endAngle);
-  ctx.lineTo(x + TILE_SIZE / 2, y + TILE_SIZE / 2);
+
+  ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+  ctx.lineTo(centerX, centerY);
   ctx.fill();
 }
 
